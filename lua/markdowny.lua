@@ -458,6 +458,11 @@ function M.code()
     end
 end
 
+function M.strikethrough()
+    local ctx = exit_visual_if_active()
+    inline_surround('~~', '~~', nil, ctx.block_info)
+end
+
 function M.link()
     local ctx = exit_visual_if_active()
     vim.ui.input({ prompt = 'Href:' }, function(href)
@@ -486,6 +491,7 @@ function M.setup(opts)
             vim.keymap.set('v', '<C-i>', "<Cmd>lua require('markdowny').italic()<CR>", { buffer = 0, silent = true })
             vim.keymap.set('v', '<C-k>', "<Cmd>lua require('markdowny').link()<CR>", { buffer = 0, silent = true })
             vim.keymap.set('v', '<C-e>', "<Cmd>lua require('markdowny').code()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set('v', '<C-t>', "<Cmd>lua require('markdowny').strikethrough()<CR>", { buffer = 0, silent = true })
         end,
     })
 end
