@@ -268,13 +268,23 @@ end
 --   2. Multi-line visual: Adds markers to the beginning/end of each selected line
 --   3. Visual block: Adds markers to the beginning/end of the block column range on each line
 -- If `remove` is true and all selected text already has markers, removes them instead (toggle behavior).
+-- If no text is selected (Normal mode), inserts markers and places cursor between them.
 ---@param before string The string to insert before the selected text.
 ---@param after string The string to insert after the selected text.
 ---@param remove boolean|nil Remove surround if possible (default true).
----@param block_info table|nil Captured block boundaries from exit_visual_if_active().
-local inline_surround = function(before, after, remove, block_info)
-    local visual_mode = vim.fn.visualmode()
+---@param ctx table Captured context from exit_visual_if_active().
+local inline_surround = function(before, after, remove, ctx)
+    local visual_mode = ctx.visual_mode
+    if not visual_mode then
+        local cursor = vim.api.nvim_win_get_cursor(0)
+        local pos = { cursor[1], cursor[2] + 1 }
+        insert_text(pos, { before .. after })
+        set_curpos({ pos[1], pos[2] + #before })
+        return
+    end
+
     local is_block = visual_mode == '\22'
+    local block_info = ctx.block_info
 
     local start_pos = get_first_byte(get_mark('<'))
     local end_pos = get_last_byte(get_mark('>'))
@@ -282,15 +292,6 @@ local inline_surround = function(before, after, remove, block_info)
     -- Validate marks exist
     if start_pos == nil or end_pos == nil then
         return
-    end
-
-    -- In visual block mode, use captured block info for true boundaries
-    local block_left_col, block_right_col
-    if is_block and block_info then
-        block_left_col = block_info.left_col
-        block_right_col = block_info.right_col
-        start_pos[1] = block_info.start_line
-        end_pos[1] = block_info.end_line
     end
 
     -- Manually count chars of last selected line in V-LINE mode due
@@ -440,27 +441,26 @@ end
 
 function M.bold()
     local ctx = exit_visual_if_active()
-    inline_surround('**', '**', nil, ctx.block_info)
+    inline_surround('**', '**', nil, ctx)
 end
 
 function M.italic()
     local ctx = exit_visual_if_active()
-    inline_surround('_', '_', nil, ctx.block_info)
+    inline_surround('_', '_', nil, ctx)
 end
 
 function M.code()
     local ctx = exit_visual_if_active()
-    local visual_mode = ctx.visual_mode or vim.fn.visualmode()
-    if visual_mode == 'V' then
+    if ctx.visual_mode == 'V' then
         newline_surround('```', '```')
     else
-        inline_surround('`', '`', nil, ctx.block_info)
+        inline_surround('`', '`', nil, ctx)
     end
 end
 
 function M.strikethrough()
     local ctx = exit_visual_if_active()
-    inline_surround('~~', '~~', nil, ctx.block_info)
+    inline_surround('~~', '~~', nil, ctx)
 end
 
 function M.link()
@@ -469,7 +469,7 @@ function M.link()
         if href == nil then
             return
         end
-        inline_surround('[', '](' .. href .. ')', false, ctx.block_info)
+        inline_surround('[', '](' .. href .. ')', false, ctx)
     end)
 end
 
@@ -487,11 +487,11 @@ function M.setup(opts)
         desc = 'markdowny.nvim keymaps',
         pattern = opts.filetypes or {'markdown', 'gitcommit', 'hgcommit'},
         callback = function()
-            vim.keymap.set('v', '<C-b>', "<Cmd>lua require('markdowny').bold()<CR>", { buffer = 0, silent = true })
-            vim.keymap.set('v', '<C-i>', "<Cmd>lua require('markdowny').italic()<CR>", { buffer = 0, silent = true })
-            vim.keymap.set('v', '<C-k>', "<Cmd>lua require('markdowny').link()<CR>", { buffer = 0, silent = true })
-            vim.keymap.set('v', '<C-e>', "<Cmd>lua require('markdowny').code()<CR>", { buffer = 0, silent = true })
-            vim.keymap.set('v', '<C-t>', "<Cmd>lua require('markdowny').strikethrough()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'i', 'v'}, '<C-b>', "<Cmd>lua require('markdowny').bold()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'i', 'v'}, '<C-i>', "<Cmd>lua require('markdowny').italic()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'i', 'v'}, '<C-k>', "<Cmd>lua require('markdowny').link()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'i', 'v'}, '<C-e>', "<Cmd>lua require('markdowny').code()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'i', 'v'}, '<C-t>', "<Cmd>lua require('markdowny').strikethrough()<CR>", { buffer = 0, silent = true })
         end,
     })
 end
