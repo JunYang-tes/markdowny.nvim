@@ -488,10 +488,13 @@ function M.setup(opts)
         pattern = opts.filetypes or {'markdown', 'gitcommit', 'hgcommit'},
         callback = function()
             vim.keymap.set({'i', 'v'}, '<C-b>', "<Cmd>lua require('markdowny').bold()<CR>", { buffer = 0, silent = true })
-            vim.keymap.set({'i', 'v'}, '<C-i>', "<Cmd>lua require('markdowny').italic()<CR>", { buffer = 0, silent = true })
+            -- vim.keymap.set({'i', 'v'}, '<C-i>', "<Cmd>lua require('markdowny').italic()<CR>", { buffer = 0, silent = true })
             vim.keymap.set({'i', 'v'}, '<C-k>', "<Cmd>lua require('markdowny').link()<CR>", { buffer = 0, silent = true })
             vim.keymap.set({'i', 'v'}, '<C-e>', "<Cmd>lua require('markdowny').code()<CR>", { buffer = 0, silent = true })
             vim.keymap.set({'i', 'v'}, '<C-t>', "<Cmd>lua require('markdowny').strikethrough()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'v'}, '_', "<Cmd>lua require('markdowny').italic()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'v'}, '*', "<Cmd>lua require('markdowny').bold()<CR>", { buffer = 0, silent = true })
+            vim.keymap.set({'v'}, '~', "<cMD>lua require('markdowny').strikethrough()<CR>", { buffer = 0, silent = true })
         end,
     })
 end
